@@ -1,0 +1,25 @@
+#!/bin/sh
+
+desc_dot_txt() {
+  echo "$1 $2 $3"
+  echo "c 0 0 part0"
+}
+
+if [ -z "$1" ]; then
+  echo "Usage: $0 file"
+  exit
+fi
+
+filename=$1
+video_info=$(ffprobe -v error -select_streams v:0 -show_entries stream=width,height,r_frame_rate -of csv=s=,:p=0 $filename)
+width=$(echo "$video_info" | cut -d ',' -f 1)
+height=$(echo "$video_info" | cut -d ',' -f 2)
+fps_fraction=$(echo "$video_info" | cut -d ',' -f 3)
+fps=$(echo $fps_fraction | bc)
+
+mkdir -p part0
+desc_dot_txt $width $height $fps > desc.txt
+ffmpeg -hide_banner -loglevel warning -i $filename part0/%04d.png
+rm -f bootanimation.zip
+zip -q -0 bootanimation.zip desc.txt part0/*
+rm -r desc.txt part0
